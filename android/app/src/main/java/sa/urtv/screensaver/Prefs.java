@@ -77,16 +77,18 @@ final class Prefs {
 
     Prefs(Context c) { sp = c.getSharedPreferences("settings", Context.MODE_PRIVATE); }
 
-    /** {name, latitude, longitude}; Christchurch, New Zealand until the user picks */
+    /** {name, latitude, longitude}; Auckland, New Zealand until the user picks */
     String[] city() {
-        // Migrate only the original Riyadh defaults; keep any city the user selected.
-        String name = sp.getString("cityName", "Christchurch");
-        String lat = sp.getString("cityLat", "-43.5321");
-        String lon = sp.getString("cityLon", "172.6362");
-        if ("الرياض".equals(name) && "24.6877".equals(lat) && "46.7219".equals(lon)) {
-            name = "Christchurch";
-            lat = "-43.5321";
-            lon = "172.6362";
+        // Migrate only known built-in defaults; preserve other cities selected by the user.
+        String name = sp.getString("cityName", "Auckland");
+        String lat = sp.getString("cityLat", "-36.8509");
+        String lon = sp.getString("cityLon", "174.7645");
+        boolean oldRiyadhDefault = "الرياض".equals(name) && "24.6877".equals(lat) && "46.7219".equals(lon);
+        boolean oldChristchurchDefault = "Christchurch".equals(name) && "-43.5321".equals(lat) && "172.6362".equals(lon);
+        if (oldRiyadhDefault || oldChristchurchDefault) {
+            name = "Auckland";
+            lat = "-36.8509";
+            lon = "174.7645";
             sp.edit().putString("cityName", name).putString("cityLat", lat).putString("cityLon", lon).apply();
         }
         return new String[] {name, lat, lon};
