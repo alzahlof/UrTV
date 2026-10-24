@@ -76,8 +76,8 @@
 
   .stage{
     position:relative;z-index:5;height:100vh;
-    padding:3.1vh 3.6vw 5.4vh;
-    display:grid;grid-template-rows:auto 1fr auto;gap:1.5vh;
+    padding:3.1vh 3.6vw 2.2vh;
+    display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;gap:1.1vh;
   }
 
   .top{display:flex;justify-content:space-between;align-items:flex-start;gap:2.5vw}
@@ -164,6 +164,17 @@
     font-size:clamp(12px,1.02vw,20px);font-weight:300;letter-spacing:.3em;color:#D8CDB6;
   }
   .subline .dot{width:5px;height:5px;border-radius:50%;background:var(--gold);opacity:.9}
+
+  .prayer-strip{
+    display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1vw;align-items:center;
+    border-top:1px solid rgba(220,184,111,.25);padding-top:1.1vh;min-width:0;
+  }
+  .prayer-strip .prayer-item{min-width:0;text-align:center;padding:.25vh .2vw;border-radius:7px;}
+  .prayer-strip .prayer-item .name{font-size:clamp(12px,.95vw,18px);color:#C6BBA4;white-space:nowrap;}
+  .prayer-strip .prayer-item .time{margin-top:.25vh;font-size:clamp(17px,1.35vw,27px);font-weight:600;color:#FFF7E6;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .prayer-strip .prayer-item.next{background:rgba(220,184,111,.12);outline:1px solid rgba(220,184,111,.42);}
+  .prayer-strip .prayer-item.next .name,.prayer-strip .prayer-item.next .time{color:#F1CF8A;}
+  .prayer-strip .prayer-item .time:empty::after{content:'—';color:#8F8670;}
 
   .bottom{
     display:grid;grid-template-columns:1fr .9fr 1.3fr;
@@ -313,6 +324,15 @@
       </div>
     </div>
   </footer>
+
+  <section class="prayer-strip" id="prayer-strip" aria-label="أوقات الصلاة">
+    <div class="prayer-item" data-prayer="Fajr"><div class="name">الفجر</div><div class="time"></div></div>
+    <div class="prayer-item" data-prayer="Sunrise"><div class="name">الشروق</div><div class="time"></div></div>
+    <div class="prayer-item" data-prayer="Dhuhr"><div class="name">الظهر</div><div class="time"></div></div>
+    <div class="prayer-item" data-prayer="Asr"><div class="name">العصر</div><div class="time"></div></div>
+    <div class="prayer-item" data-prayer="Maghrib"><div class="name">المغرب</div><div class="time"></div></div>
+    <div class="prayer-item" data-prayer="Isha"><div class="name">العشاء</div><div class="time"></div></div>
+  </section>
 
 </main>
 
@@ -476,17 +496,19 @@ async function loadPrayers(){
 
     const timings = {
       Fajr: readTime('Fajr'),
+      Sunrise: readTime('Sunrise'),
       Dhuhr: readTime('Dhuhr'),
       Asr: readTime('Asr'),
       Maghrib: readTime('Maghrib'),
       Isha: readTime('Isha')
     };
 
-    if (Object.values(timings).some(v => !v))
+    if (['Fajr','Dhuhr','Asr','Maghrib','Isha'].some(k => !timings[k]))
       throw new Error('Could not parse prayer times from Masjidbox');
 
     console.log('Masjidbox prayer times:', timings);
     buildPrayers(timings);
+    renderPrayerStrip();
     tickPrayer();
     tickRamadan();
     if (CONFIG.panel === 'prayers') renderPanel(false);
@@ -523,6 +545,24 @@ function isFriday(){
   return new Intl.DateTimeFormat('en-US',{timeZone:CONFIG.timezone,weekday:'short'}).format(new Date()) === 'Fri';
 }
 function prayerName(x){ return x.key === 'Dhuhr' && isFriday() ? 'الجمعة' : x.name; }
+
+function renderPrayerStrip(){
+  const strip = document.getElementById('prayer-strip');
+  if(!strip || !DAY_TIMES) return;
+  const now = riyadhParts(), minute = now.h * 60 + now.mi;
+  let nextKey = PRAYER_KEYS.find(k => {
+    const raw = DAY_TIMES[k];
+    if(!raw) return false;
+    const [h, m] = String(raw).split(':').map(Number);
+    return h * 60 + m > minute;
+  });
+  if(!nextKey) nextKey = 'Fajr';
+  strip.querySelectorAll('.prayer-item').forEach(item => {
+    const key = item.dataset.prayer, raw = DAY_TIMES[key], time = item.querySelector('.time');
+    item.classList.toggle('next', key === nextKey);
+    if(raw){ const [h,m] = String(raw).split(':').map(Number); time.textContent = fmt12(h,m); }
+  });
+}
 
 function tickPrayer(){
   const elL=document.getElementById('prayer-label'),
@@ -1276,7 +1316,7 @@ function boot(){
   applyNight(); pixelShift();
 
   setInterval(tickClock, 1000);
-  setInterval(()=>{ tickDates(); tickPrayer(); tickRamadan(); if(CONFIG.panel === 'prayers') renderPanel(false); }, 15000);
+  setInterval(()=>{ tickDates(); tickPrayer(); tickRamadan(); renderPrayerStrip(); if(CONFIG.panel === 'prayers') renderPanel(false); }, 15000);
   setInterval(() => renderMatches(false), 60000);
   setInterval(() => renderMatches(true), CONFIG.matchPageMs);
   setInterval(loadLive, 2*60000);
