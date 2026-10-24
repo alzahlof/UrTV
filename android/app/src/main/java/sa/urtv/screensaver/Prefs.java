@@ -79,7 +79,17 @@ final class Prefs {
 
     /** {name, latitude, longitude}; Christchurch, New Zealand until the user picks */
     String[] city() {
-        return new String[] {sp.getString("cityName", "Christchurch"), sp.getString("cityLat", "-43.5321"), sp.getString("cityLon", "172.6362")};
+        // Migrate only the original Riyadh defaults; keep any city the user selected.
+        String name = sp.getString("cityName", "Christchurch");
+        String lat = sp.getString("cityLat", "-43.5321");
+        String lon = sp.getString("cityLon", "172.6362");
+        if ("الرياض".equals(name) && "24.6877".equals(lat) && "46.7219".equals(lon)) {
+            name = "Christchurch";
+            lat = "-43.5321";
+            lon = "172.6362";
+            sp.edit().putString("cityName", name).putString("cityLat", lat).putString("cityLon", lon).apply();
+        }
+        return new String[] {name, lat, lon};
     }
     void setCity(String name, String lat, String lon) {
         sp.edit().putString("cityName", name).putString("cityLat", lat).putString("cityLon", lon).apply();
