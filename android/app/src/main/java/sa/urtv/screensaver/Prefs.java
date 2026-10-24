@@ -12,7 +12,7 @@ import java.util.List;
 
 /** Everything the user picks in settings, and the dashboard URL built from it. */
 final class Prefs {
-    static final String TZ = "Pacific/Auckland";
+    static String systemTimeZone() { return java.util.TimeZone.getDefault().getID(); }
 
     // TheSportsDB id, Arabic name; more teams come from the in-app search
     static final String[][] TEAM_PRESETS = {
@@ -77,9 +77,9 @@ final class Prefs {
 
     Prefs(Context c) { sp = c.getSharedPreferences("settings", Context.MODE_PRIVATE); }
 
-    /** {name, latitude, longitude}; Riyadh until the user picks */
+    /** {name, latitude, longitude}; Christchurch, New Zealand until the user picks */
     String[] city() {
-        return new String[] {sp.getString("cityName", "الرياض"), sp.getString("cityLat", "24.6877"), sp.getString("cityLon", "46.7219")};
+        return new String[] {sp.getString("cityName", "Christchurch"), sp.getString("cityLat", "-43.5321"), sp.getString("cityLon", "172.6362")};
     }
     void setCity(String name, String lat, String lon) {
         sp.edit().putString("cityName", name).putString("cityLat", lat).putString("cityLon", lon).apply();
@@ -166,7 +166,7 @@ final class Prefs {
         List<String> ids = new ArrayList<>();
         for (String s : shows()) ids.add(s.split("\\|", 2)[0]);
         return "city=" + Uri.encode(city[0]) + "&lat=" + city[1] + "&lon=" + city[2]
-            + "&tz=" + Uri.encode(TZ)
+            + "&tz=" + Uri.encode(systemTimeZone())
             + "&teams=" + join(teamIds(), ",")
             + "&panel=" + panel()
             + "&week=" + ("none".equals(panel()) ? "0" : "1")   // for a page older than #panel
