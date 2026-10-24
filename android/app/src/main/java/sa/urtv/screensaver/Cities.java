@@ -9,6 +9,10 @@ final class Cities {
     }
 
     static final Region[] REGIONS = {
+        new Region("منطقة نيوزيلندا", new String[][] {
+            {"Auckland", "-36.8509", "174.7645"},
+            {"Christchurch", "-43.5321", "172.6362"}
+        }),
         new Region("منطقة الرياض", new String[][] {
             {"الرياض", "24.6877", "46.7219"},
             {"الخرج", "24.1554", "47.3346"},
