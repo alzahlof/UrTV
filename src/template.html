@@ -269,12 +269,12 @@
 
     <div class="markets">
       <div class="wxline"><span class="wxt" id="wx-temp"></span><span class="wxd" id="wx-desc"></span></div>
-      <div class="wxsub"><span id="wx-city">الرياض</span><span class="wxr" id="wx-range"></span></div>
+      <div class="wxsub"><span id="wx-city">Christchurch</span><span class="wxr" id="wx-range"></span></div>
       <div class="rule l"></div>
       <div class="mk">
         <span class="m"><span>تاسي</span><span id="tasi-chg" class="delta" hidden></span></span>
         <span class="m"><span>S&amp;P 500</span><span id="spx-chg" class="delta" hidden></span></span>
-        <span class="m"><span>بيتكوين</span><span id="btc-chg" class="delta" hidden></span></span>
+
       </div>
     </div>
   </header>
@@ -284,7 +284,7 @@
       <div class="clock">
         <span class="ampm" id="ck-ap">—</span><span class="d" id="ck-h">--</span><span class="sep">:</span><span class="d" id="ck-m">--</span>
       </div>
-      <div class="subline"><span class="dot"></span><span id="clock-sub">بتوقيت الرياض</span></div>
+      <div class="subline"><span class="dot"></span><span id="clock-sub">Local time</span></div>
     </div>
 
     <div class="week">
@@ -326,10 +326,10 @@ const _Q = new URLSearchParams((location.hash || '').replace(/^#/, ''));
 const _list = k => (_Q.get(k) || '').split(',').map(x=>x.trim()).filter(Boolean);
 const _num = (k, d) => { const v = parseFloat(_Q.get(k)); return isNaN(v) ? d : v; };
 const CONFIG = {
-  city: _Q.get('city') || 'الرياض',
-  latitude: _num('lat', 24.7136),
-  longitude: _num('lon', 46.6753),
-  timezone: _Q.get('tz') || 'Pacific/Auckland',
+  city: _Q.get('city') || 'Christchurch',
+  latitude: _num('lat', -43.5321),
+  longitude: _num('lon', 172.6362),
+  timezone: _Q.get('tz') || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
   prayerMethod: 4,
   // followed teams in priority order: #teams=id,id,... (up to 10); older builds send team1/team2
   teamIds: (_Q.has('teams') ? _Q.get('teams').split(',')
@@ -358,8 +358,8 @@ const CONFIG = {
   widget: _Q.get('widget') === '1',
 };
 
-const GREG = 'ar-SA-u-ca-gregory-nu-arab';
-const AR = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+const GREG = 'en-GB-u-ca-gregory-nu-latn';
+const AR = ['0','1','2','3','4','5','6','7','8','9'];
 const ar = s => String(s).replace(/[0-9]/g, d => AR[+d]);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad = n => String(n).padStart(2,'0');
@@ -374,7 +374,7 @@ function riyadhParts(d = new Date()){
 }
 function fmt12(h, mi){
   const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${ar(h12)}:${ar(pad(mi))} ${h < 12 ? 'ص' : 'م'}`;
+  return `${h12}:${pad(mi)} ${h < 12 ? 'AM' : 'PM'}`;
 }
 
 function tickClock(){
@@ -385,19 +385,19 @@ function tickClock(){
   const key = h12 + ':' + p.mi;
   if(key === tickClock.last) return;   // ticks every second, redraws once a minute
   tickClock.last = key;
-  document.getElementById('ck-h').innerHTML = digits(ar(h12));
-  document.getElementById('ck-m').innerHTML = digits(ar(pad(p.mi)));
-  document.getElementById('ck-ap').textContent = p.h < 12 ? 'ص' : 'م';
+  document.getElementById('ck-h').innerHTML = digits(String(h12));
+  document.getElementById('ck-m').innerHTML = digits(pad(p.mi));
+  document.getElementById('ck-ap').textContent = p.h < 12 ? 'AM' : 'PM';
 }
 
 function tickDates(){
   const now = new Date();
   try{
-    let h = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura',{
+    let h = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn',{
       timeZone: CONFIG.timezone, weekday:'long', day:'numeric', month:'long', year:'numeric'
     }).format(now);
-    h = h.replace(/\s*هـ\s*$/,'').replace(/،\s*$/,'');
-    document.getElementById('hijri').textContent = h + ' هـ';
+    h = h.replace(/\s*AH\s*$/i,'').replace(/,\s*$/,'');
+    document.getElementById('hijri').textContent = h + ' AH';
   }catch(e){}
   try{
     document.getElementById('greg').textContent = new Intl.DateTimeFormat(GREG,{
@@ -457,23 +457,43 @@ function computePrayers(){
 }
 
 async function loadPrayers(){
-  const p = riyadhParts();
-  const url = `https://api.aladhan.com/v1/timings/${pad(p.d)}-${pad(p.mo)}-${p.y}`
-            + `?latitude=${CONFIG.latitude}&longitude=${CONFIG.longitude}`
-            + `&method=${CONFIG.prayerMethod}&timezonestring=${encodeURIComponent(CONFIG.timezone)}`;
-  try{
-    const r = await fetchT(url, 12000);
-    const j = await r.json();
-    if(!j?.data?.timings?.Fajr) throw 0;
-    buildPrayers(j.data.timings);
-  }catch(e){
-    try{ buildPrayers(computePrayers()); }catch(_){}
-  }
-  tickPrayer();
-  tickRamadan();   // Ramadan mode needs the prayer times
-  if(CONFIG.panel === 'prayers') renderPanel(false);
-}
+  const url = 'https' + ':' + String.fromCharCode(47,47) + 'masjidbox.com/prayer-times/masjid-annur';
+  try {
+    const r = await fetchT(url, 15000);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const html = await r.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const text = (doc.body?.textContent || '').replace(/\s+/g, ' ');
 
+    function readTime(label) {
+            const re = new RegExp(label + '\\s*(\\d{1,2}):?(\\d{2})\\s*(AM|PM)', 'i');
+      const m = text.match(re);
+      if (!m) return null;
+      let h = Number(m[1]) % 12;
+      if (m[3].toUpperCase() === 'PM') h += 12;
+      return pad(h) + ':' + m[2];
+    }
+
+    const timings = {
+      Fajr: readTime('Fajr'),
+      Dhuhr: readTime('Dhuhr'),
+      Asr: readTime('Asr'),
+      Maghrib: readTime('Maghrib'),
+      Isha: readTime('Isha')
+    };
+
+    if (Object.values(timings).some(v => !v))
+      throw new Error('Could not parse prayer times from Masjidbox');
+
+    console.log('Masjidbox prayer times:', timings);
+    buildPrayers(timings);
+    tickPrayer();
+    tickRamadan();
+    if (CONFIG.panel === 'prayers') renderPanel(false);
+  } catch (e) {
+    console.error('Masjidbox prayer times failed:', e);
+  }
+}
 const UNIT = {
   day: {one:'يوم', two:'يومين', few:'أيام', many:'يوم'},
   hour:{one:'ساعة', two:'ساعتين', few:'ساعات', many:'ساعة'},
@@ -830,7 +850,6 @@ async function loadMatches(){
 const TICKERS = [
   {sym:'^TASI.SR', chg:'tasi-chg'},
   {sym:'^GSPC',    chg:'spx-chg'},
-  {cg:'bitcoin',   chg:'btc-chg'},
 ];
 
 // never invent a direction: unknown hides the marker
@@ -1073,12 +1092,12 @@ function quoteOfDay(){
 }
 
 const WX_CODES = {
-  0:'صافي',1:'صافي غالباً',2:'غائم جزئياً',3:'غائم',45:'ضباب',48:'ضباب متجمد',
-  51:'رذاذ',53:'رذاذ',55:'رذاذ كثيف',56:'رذاذ متجمد',57:'رذاذ متجمد',
-  61:'مطر خفيف',63:'مطر',65:'مطر غزير',66:'مطر متجمد',67:'مطر متجمد',
-  71:'ثلج خفيف',73:'ثلج',75:'ثلج كثيف',77:'حبيبات ثلج',
-  80:'زخات خفيفة',81:'زخات مطر',82:'زخات غزيرة',85:'زخات ثلج',86:'زخات ثلج',
-  95:'عواصف رعدية',96:'عواصف مصحوبة ببرد',99:'عواصف قوية'
+  0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Freezing fog',
+  51:'Drizzle',53:'Drizzle',55:'Heavy drizzle',56:'Freezing drizzle',57:'Freezing drizzle',
+  61:'Light rain',63:'Rain',65:'Heavy rain',66:'Freezing rain',67:'Freezing rain',
+  71:'Light snow',73:'Snow',75:'Heavy snow',77:'Snow grains',
+  80:'Light showers',81:'Rain showers',82:'Heavy showers',85:'Snow showers',86:'Heavy snow showers',
+  95:'Thunderstorm',96:'Thunderstorm with hail',99:'Severe thunderstorm'
 };
 async function loadWeather(){
   const q = `latitude=${CONFIG.latitude}&longitude=${CONFIG.longitude}&timezone=${encodeURIComponent(CONFIG.timezone)}`;
@@ -1109,7 +1128,7 @@ async function loadWeather(){
     const pm = Math.max(c.pm10 || 0, c.dust || 0);
     if(pm >= 150){
       const d = document.getElementById('wx-desc');
-      d.textContent = pm >= 400 ? 'غبار كثيف' : 'غبار';
+      d.textContent = pm >= 400 ? 'Heavy dust' : 'Dust';
       d.classList.add('dust');
     }
   }catch(e){}
@@ -1244,7 +1263,7 @@ function boot(){
   const wxCity = document.getElementById('wx-city');
   if(wxCity) wxCity.textContent = CONFIG.city;
   const cs = document.getElementById('clock-sub');
-  if(cs) cs.textContent = 'بتوقيت ' + CONFIG.city;
+  if(cs) cs.textContent = 'Local time · ' + CONFIG.timezone;
   document.title = 'شاشة تلفزيونك';
   applyBackground(true);
   loadPhotoIndex().then(() => applyBackground(true));
