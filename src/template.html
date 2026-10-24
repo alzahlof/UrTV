@@ -269,7 +269,7 @@
 
     <div class="markets">
       <div class="wxline"><span class="wxt" id="wx-temp"></span><span class="wxd" id="wx-desc"></span></div>
-      <div class="wxsub"><span id="wx-city">Christchurch</span><span class="wxr" id="wx-range"></span></div>
+      <div class="wxsub"><span id="wx-city">Auckland</span><span class="wxr" id="wx-range"></span></div>
       <div class="rule l"></div>
       <div class="mk">
         <span class="m"><span>تاسي</span><span id="tasi-chg" class="delta" hidden></span></span>
@@ -326,9 +326,9 @@ const _Q = new URLSearchParams((location.hash || '').replace(/^#/, ''));
 const _list = k => (_Q.get(k) || '').split(',').map(x=>x.trim()).filter(Boolean);
 const _num = (k, d) => { const v = parseFloat(_Q.get(k)); return isNaN(v) ? d : v; };
 const CONFIG = {
-  city: _Q.get('city') || 'Christchurch',
-  latitude: _num('lat', -43.5321),
-  longitude: _num('lon', 172.6362),
+  city: _Q.get('city') || 'Auckland',
+  latitude: _num('lat', -36.8509),
+  longitude: _num('lon', 174.7645),
   timezone: _Q.get('tz') || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
   prayerMethod: 4,
   // followed teams in priority order: #teams=id,id,... (up to 10); older builds send team1/team2
